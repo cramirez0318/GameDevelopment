@@ -5,7 +5,22 @@
 			"guid": "00000000000000000000000000000000",
 			"description": "Default Uncontrolled Changelist",
 			"files": [
-				"D:/Program Files/Epic Games/Source/GameDevelopment/Content/StarterContent/Architecture/Floor_400x400.uasset"
+				"D:/Program Files/Epic Games/Source/GameDevelopment/Content/StarterContent/Architecture/Floor_400x400.uasset",
+				"D:/Program Files/Epic Games/Source/GameDevelopment/Content/Test_Map.umap",
+				"D:/Program Files/Epic Games/Source/GameDevelopment/Content/ExampleFiles/BP_MovingBox_Bad1.uasset",
+				"D:/Program Files/Epic Games/Source/GameDevelopment/Content/ExampleFiles/BP_SpinningBox_Bad1.uasset",
+				"D:/Program Files/Epic Games/Source/GameDevelopment/Content/ExampleFiles/CH_Example_Bad1.uasset",
+				"D:/Program Files/Epic Games/Source/GameDevelopment/Content/ExampleFiles/Wpn_Pistol1.uasset",
+				"D:/Program Files/Epic Games/Source/GameDevelopment/Content/ExampleFiles/Wpn_Rifle1.uasset",
+				"D:/Program Files/Epic Games/Source/GameDevelopment/Content/ExampleFiles/Wpn_Shotgun1.uasset",
+				"D:/Program Files/Epic Games/UE_5.5/Engine/Content/BasicShapes/BasicShapeMaterial.uasset",
+				"D:/Program Files/Epic Games/Source/GameDevelopment/Content/ExampleFiles/M_Base_Color.uasset",
+				"D:/Program Files/Epic Games/Source/GameDevelopment/Content/ExampleFiles/M_Base_Color_Inst.uasset",
+				"D:/Program Files/Epic Games/Source/GameDevelopment/Content/TestFiles/TestLevel.umap",
+				"D:/Program Files/Epic Games/Source/GameDevelopment/Content/ExampleFiles/BP_MovingBox_Fixed.uasset",
+				"D:/Program Files/Epic Games/Source/GameDevelopment/Content/ExampleFiles/CH_Example_Better.uasset",
+				"D:/Program Files/Epic Games/Source/GameDevelopment/Content/TestFiles/GM_Test.uasset",
+				"D:/Program Files/Epic Games/Source/GameDevelopment/Content/ExampleFiles/BI_Weapon.uasset"
 			]
 		}
 	]
