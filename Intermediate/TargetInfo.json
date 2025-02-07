@@ -1,0 +1,14 @@
+{
+	"Targets": [
+		{
+			"Name": "GameDevelopment",
+			"Path": "..\\Source\\GameDevelopment.Target.cs",
+			"Type": "Game"
+		},
+		{
+			"Name": "GameDevelopmentEditor",
+			"Path": "..\\Source\\GameDevelopmentEditor.Target.cs",
+			"Type": "Editor"
+		}
+	]
+}
