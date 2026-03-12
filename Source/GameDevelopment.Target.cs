@@ -8,8 +8,9 @@ public class GameDevelopmentTarget : TargetRules
 	public GameDevelopmentTarget(TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Game;
-		DefaultBuildSettings = BuildSettingsVersion.V5;
-		IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_5;
-		ExtraModuleNames.Add("GameDevelopment");
+		DefaultBuildSettings = BuildSettingsVersion.V6;
+		IncludeOrderVersion = EngineIncludeOrderVersion.Latest;
+		ExtraModuleNames.AddRange(new string[] { "GameDevelopment" });
+		BuildEnvironment = TargetBuildEnvironment.Unique;
 	}
 }
