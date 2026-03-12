@@ -1,36 +1,113 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
+﻿#include "Components/DynamicInstanceSourceComponent.h"
+#include "Core/DynamicInstanceSubsystem.h"
+#include "Data/DynamicConversionDefinition.h"
+#include "Components/InstancedStaticMeshComponent.h"
+#include "Engine/World.h"
 
-
-#include "Components/DynamicInstanceSourceComponent.h"
-
-
-// Sets default values for this component's properties
 UDynamicInstanceSourceComponent::UDynamicInstanceSourceComponent()
 {
-	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
-	// off to improve performance if you don't need them.
-	PrimaryComponentTick.bCanEverTick = true;
-
-	// ...
+	PrimaryComponentTick.bCanEverTick = false; 
 }
 
-
-// Called when the game starts
 void UDynamicInstanceSourceComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// ...
-	
+	if (UWorld* World = GetWorld())
+	{
+		if (UDynamicInstanceSubsystem* Subsystem = World->GetSubsystem<UDynamicInstanceSubsystem>())
+		{
+			Subsystem->RegisterSourceComponent(this);
+		}
+	}
 }
 
-
-// Called every frame
-void UDynamicInstanceSourceComponent::TickComponent(float DeltaTime, ELevelTick TickType,
-                                                    FActorComponentTickFunction* ThisTickFunction)
+void UDynamicInstanceSourceComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	if (UWorld* World = GetWorld())
+	{
+		if (UDynamicInstanceSubsystem* Subsystem = World->GetSubsystem<UDynamicInstanceSubsystem>())
+		{
+			Subsystem->UnregisterSourceComponent(this);
+		}
+	}
 
-	// ...
+	Super::EndPlay(EndPlayReason);
 }
 
+bool UDynamicInstanceSourceComponent::HasValidDefinition() const
+{
+	return ConversionDefinition != nullptr && ConversionDefinition->IsValidDefinition();
+}
+
+TArray<UInstancedStaticMeshComponent*> UDynamicInstanceSourceComponent::GetSourceComponents() const
+{
+	return GetRegisteredISMComponents();
+}
+
+TArray<UInstancedStaticMeshComponent*> UDynamicInstanceSourceComponent::GetRegisteredISMComponents() const
+{
+	TArray<UInstancedStaticMeshComponent*> OutComponents;
+	if (AActor* Owner = GetOwner())
+	{
+		Owner->GetComponents<UInstancedStaticMeshComponent>(OutComponents);
+	}
+	return OutComponents;
+}
+
+void UDynamicInstanceSourceComponent::ForEachISMComponent(TFunctionRef<void(UInstancedStaticMeshComponent*)> Func) const
+{
+	if (AActor* Owner = GetOwner())
+	{
+		TArray<UInstancedStaticMeshComponent*> Components;
+		Owner->GetComponents<UInstancedStaticMeshComponent>(Components);
+		for (UInstancedStaticMeshComponent* Comp : Components)
+		{
+			if (IsValid(Comp))
+			{
+				Func(Comp);
+			}
+		}
+	}
+}
+
+bool UDynamicInstanceSourceComponent::GetInstanceWorldTransform(UInstancedStaticMeshComponent* ISM, int32 Index, FTransform& OutTransform) const
+{
+	if (IsValid(ISM) && ISM->IsValidInstance(Index))
+	{
+		return ISM->GetInstanceTransform(Index, OutTransform, true);
+	}
+	return false;
+}
+
+bool UDynamicInstanceSourceComponent::HideInstance(UInstancedStaticMeshComponent* ISM, int32 Index)
+{
+	if (IsValid(ISM) && ISM->IsValidInstance(Index))
+	{
+		FTransform HiddenTransform = FTransform::Identity;
+		HiddenTransform.SetScale3D(FVector::ZeroVector);
+		return ISM->UpdateInstanceTransform(
+			Index, 
+			HiddenTransform, 
+			true,
+			true,
+			true
+		);
+	}
+	return false;
+}
+
+bool UDynamicInstanceSourceComponent::RestoreInstance(UInstancedStaticMeshComponent* ISM, int32 Index, const FTransform& OriginalTransform)
+{
+	if (IsValid(ISM) && ISM->IsValidInstance(Index))
+	{
+		return ISM->UpdateInstanceTransform(
+			Index, 
+			OriginalTransform, 
+			true, 
+			true, 
+			true
+		);
+	}
+	return false;
+}
