@@ -48,7 +48,7 @@ struct FDynamicInstanceRecord
     TWeakObjectPtr<AActor> SpawnedActor = nullptr;
 
     UPROPERTY(BlueprintReadOnly, Category = "Instance Conversion")
-    FTransform CachedInstanceTransform = FTransform::Identity;
+    FTransform OriginalInstanceTransform = FTransform::Identity;
 
     UPROPERTY(BlueprintReadOnly, Category = "Instance Conversion")
     FInstancedStruct SavedGameplayState;

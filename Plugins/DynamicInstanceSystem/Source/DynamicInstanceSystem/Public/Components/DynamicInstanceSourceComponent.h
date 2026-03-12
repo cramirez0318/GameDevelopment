@@ -7,6 +7,14 @@
 class UDynamicConversionDefinition;
 class UInstancedStaticMeshComponent;
 
+UENUM(BlueprintType)
+enum class EDynamicInstanceFilterMode : uint8
+{
+	AllComponents      UMETA(DisplayName = "All ISM Components"),
+	ExplicitList       UMETA(DisplayName = "Explicit List"),
+	TagFilter          UMETA(DisplayName = "Filter by Component Tag")
+};
+
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class DYNAMICINSTANCESYSTEM_API UDynamicInstanceSourceComponent : public UActorComponent
 {
@@ -14,6 +22,17 @@ class DYNAMICINSTANCESYSTEM_API UDynamicInstanceSourceComponent : public UActorC
 
 public:
 	UDynamicInstanceSourceComponent();
+	
+	UPROPERTY(EditAnywhere, Category = "Instance Conversion|Filter")
+	EDynamicInstanceFilterMode FilterMode = EDynamicInstanceFilterMode::AllComponents;
+
+	/** Only used if FilterMode is set to 'Explicit List' */
+	UPROPERTY(EditAnywhere, Category = "Instance Conversion|Filter", meta = (EditCondition = "FilterMode == EDynamicInstanceFilterMode::ExplicitList"))
+	TArray<TObjectPtr<UInstancedStaticMeshComponent>> ExplicitComponents;
+
+	/** Only used if FilterMode is set to 'Filter by Component Tag' */
+	UPROPERTY(EditAnywhere, Category = "Instance Conversion|Filter", meta = (EditCondition = "FilterMode == EDynamicInstanceFilterMode::TagFilter"))
+	FName RequiredComponentTag;
 
 	/** Public API for the Subsystem */
 	
@@ -31,7 +50,7 @@ public:
 	TArray<UInstancedStaticMeshComponent*> GetRegisteredISMComponents() const;
 
 	/** Executes a function for every managed ISM component (High performance) */
-	void ForEachISMComponent(TFunctionRef<void(UInstancedStaticMeshComponent*)> Func) const;
+	void ForEachISMComponent(TFunctionRef<void(UInstancedStaticMeshComponent*)> Func);
 	
 	/** API for ISM Abstraction */
 

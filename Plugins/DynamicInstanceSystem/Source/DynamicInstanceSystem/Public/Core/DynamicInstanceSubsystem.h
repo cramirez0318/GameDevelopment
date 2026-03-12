@@ -2,11 +2,26 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/WorldSubsystem.h"
+#include "GameFramework/Actor.h"
+#include "Components/InstancedStaticMeshComponent.h"
 #include "Data/DynamicInstanceTypes.h"
 #include "DynamicInstanceSubsystem.generated.h"
 
 class UDynamicConversionDefinition;
 class UDynamicInstanceSourceComponent;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(
+	FOnInstanceConverted,
+	UInstancedStaticMeshComponent*, InstancedMeshComponent,
+	int32, InstanceIndex,
+	AActor*, ConvertedActor
+);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(
+	FOnInstanceReverted,
+	UInstancedStaticMeshComponent*, InstancedMeshComponent,
+	int32, InstanceIndex
+);
 
 UCLASS()
 class DYNAMICINSTANCESYSTEM_API UDynamicInstanceSubsystem : public UWorldSubsystem
@@ -16,22 +31,40 @@ class DYNAMICINSTANCESYSTEM_API UDynamicInstanceSubsystem : public UWorldSubsyst
 public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
-	void OnUpdate(float DeltaTime);
+
 	void RegisterSourceComponent(UDynamicInstanceSourceComponent* Component);
 	void UnregisterSourceComponent(UDynamicInstanceSourceComponent* Component);
+
+	UPROPERTY(BlueprintAssignable, Category = "Dynamic Instance|Events")
+	FOnInstanceConverted OnInstanceConverted;
+
+	UPROPERTY(BlueprintAssignable, Category = "Dynamic Instance|Events")
+	FOnInstanceReverted OnInstanceReverted;
+
+	UFUNCTION(BlueprintPure, Category = "Dynamic Instance")
 	bool IsInstanceConverted(const FDynamicInstanceKey& Key) const;
+
+	UFUNCTION(BlueprintPure, Category = "Dynamic Instance")
 	AActor* GetActorForKey(const FDynamicInstanceKey& Key) const;
-	int32 GetRegistrySize () const; 
+
+	UFUNCTION(BlueprintPure, Category = "Dynamic Instance")
+	int32 GetRegistrySize() const;
+
 	bool ManualConvert(UInstancedStaticMeshComponent* ISM, int32 InstanceIndex);
 	bool ManualRevert(UInstancedStaticMeshComponent* ISM, int32 InstanceIndex);
-	
+
+	UFUNCTION(BlueprintCallable, Category = "Dynamic Instance")
+	void RegisterQueryActor(AActor* QueryActor);
+
+	UFUNCTION(BlueprintCallable, Category = "Dynamic Instance")
+	void UnregisterQueryActor(AActor* QueryActor);
+
 protected:
 	UPROPERTY()
 	TMap<FDynamicInstanceKey, FDynamicInstanceRecord> InstanceRegistry;
 
-	// Core logic
-	bool ConvertInstanceToActor(FDynamicInstanceKey Key, FDynamicInstanceRecord& Record);
-	bool RevertActorToInstance(FDynamicInstanceKey Key, FDynamicInstanceRecord& Record);
+	UPROPERTY()
+	TSet<TWeakObjectPtr<AActor>> RegisteredQueryActors;
 
 private:
 	UPROPERTY()
@@ -39,18 +72,36 @@ private:
 
 	FTimerHandle UpdateTimerHandle;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Config")
+	UPROPERTY(EditDefaultsOnly, Category = "Config", meta = (ClampMin = "0.01"))
 	float UpdateInterval = 0.2f;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Debug")
+	bool bEnableDebugLogging = false;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Debug")
+	bool bEnableDebugDraw = false;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Debug", meta = (ClampMin = "0.0"))
+	float DebugDrawDuration = 0.0f;
+
+	void OnUpdate(float DeltaTime);
 	void OnUpdateTimer();
 	void EvaluateSources();
+	void PruneStaleRecords();
+
 	bool ConvertInstance(UDynamicInstanceSourceComponent* Source, UInstancedStaticMeshComponent* ISM, int32 InstanceIndex);
 	bool RevertInstance(const FDynamicInstanceKey& Key);
-	bool GetPlayerLocation(FVector& OutLocation) const;
+
+	bool ConvertInstanceToActor(FDynamicInstanceKey Key, FDynamicInstanceRecord& Record);
+	bool RevertActorToInstance(FDynamicInstanceKey Key, FDynamicInstanceRecord& Record);
+
 	bool GetPrimaryQueryLocation(FVector& OutLocation) const;
 	bool HasSatisfiedHysteresis(const FDynamicInstanceRecord& Record, const UDynamicConversionDefinition* Def) const;
-	void PruneStaleRecords();
 	bool ShouldConvertInstance(const FDynamicInstanceRecord* Record, const UDynamicConversionDefinition* Def, float DistSq) const;
 	bool ShouldRevertInstance(const FDynamicInstanceRecord* Record, const UDynamicConversionDefinition* Def, float DistSq) const;
-	
+
+	void GetCollectionOfQueryLocations(TArray<FVector>& OutLocations);
+	bool IsSourceInBroadphaseRange(const UDynamicInstanceSourceComponent* Source, const TArray<FVector>& QueryLocations) const;
+	void ProcessInstance(UDynamicInstanceSourceComponent* Source, UInstancedStaticMeshComponent* ISM, int32 Index, const TArray<FVector>& QueryLocations);
+	void DrawDebugVisuals(const FVector& InstanceLoc, float DistSq, const UDynamicConversionDefinition* Def) const;
 };

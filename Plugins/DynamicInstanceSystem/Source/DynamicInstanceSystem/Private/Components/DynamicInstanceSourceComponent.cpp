@@ -55,18 +55,35 @@ TArray<UInstancedStaticMeshComponent*> UDynamicInstanceSourceComponent::GetRegis
 	return OutComponents;
 }
 
-void UDynamicInstanceSourceComponent::ForEachISMComponent(TFunctionRef<void(UInstancedStaticMeshComponent*)> Func) const
+void UDynamicInstanceSourceComponent::ForEachISMComponent(TFunctionRef<void(UInstancedStaticMeshComponent*)> Func)
 {
-	if (AActor* Owner = GetOwner())
+	AActor* Owner = GetOwner();
+	if (!Owner) return;
+
+	if (FilterMode == EDynamicInstanceFilterMode::ExplicitList)
+	{
+		for (UInstancedStaticMeshComponent* ISM : ExplicitComponents)
+		{
+			if (IsValid(ISM)) Func(ISM);
+		}
+	}
+	else
 	{
 		TArray<UInstancedStaticMeshComponent*> Components;
 		Owner->GetComponents<UInstancedStaticMeshComponent>(Components);
-		for (UInstancedStaticMeshComponent* Comp : Components)
+
+		for (UInstancedStaticMeshComponent* ISM : Components)
 		{
-			if (IsValid(Comp))
+			if (!IsValid(ISM)) continue;
+
+			if (FilterMode == EDynamicInstanceFilterMode::TagFilter)
 			{
-				Func(Comp);
+				if (!ISM->ComponentHasTag(RequiredComponentTag))
+				{
+					continue;
+				}
 			}
+			Func(ISM);
 		}
 	}
 }
@@ -82,19 +99,26 @@ bool UDynamicInstanceSourceComponent::GetInstanceWorldTransform(UInstancedStatic
 
 bool UDynamicInstanceSourceComponent::HideInstance(UInstancedStaticMeshComponent* ISM, int32 Index)
 {
-	if (IsValid(ISM) && ISM->IsValidInstance(Index))
+	if (!IsValid(ISM) || !ISM->IsValidInstance(Index))
 	{
-		FTransform HiddenTransform = FTransform::Identity;
-		HiddenTransform.SetScale3D(FVector::ZeroVector);
-		return ISM->UpdateInstanceTransform(
-			Index, 
-			HiddenTransform, 
-			true,
-			true,
-			true
-		);
+		return false;
 	}
-	return false;
+
+	FTransform HiddenTransform;
+	if (!ISM->GetInstanceTransform(Index, HiddenTransform, true))
+	{
+		return false;
+	}
+
+	HiddenTransform.SetScale3D(FVector::ZeroVector);
+
+	return ISM->UpdateInstanceTransform(
+		Index,
+		HiddenTransform,
+		true,
+		true,
+		true
+	);
 }
 
 bool UDynamicInstanceSourceComponent::RestoreInstance(UInstancedStaticMeshComponent* ISM, int32 Index, const FTransform& OriginalTransform)
