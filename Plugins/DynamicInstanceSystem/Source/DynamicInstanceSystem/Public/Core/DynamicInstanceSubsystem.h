@@ -23,7 +23,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(
 	int32, InstanceIndex
 );
 
-UCLASS()
+UCLASS(Config = Game, DefaultConfig)
 class DYNAMICINSTANCESYSTEM_API UDynamicInstanceSubsystem : public UWorldSubsystem
 {
 	GENERATED_BODY()
@@ -52,12 +52,29 @@ public:
 
 	bool ManualConvert(UInstancedStaticMeshComponent* ISM, int32 InstanceIndex);
 	bool ManualRevert(UInstancedStaticMeshComponent* ISM, int32 InstanceIndex);
+	void RefreshUpdateTimer();
 
 	UFUNCTION(BlueprintCallable, Category = "Dynamic Instance")
 	void RegisterQueryActor(AActor* QueryActor);
 
 	UFUNCTION(BlueprintCallable, Category = "Dynamic Instance")
 	void UnregisterQueryActor(AActor* QueryActor);
+	
+	/** How often the proximity check runs (in seconds). Lower is more responsive but heavier on CPU. */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (ClampMin = "0.01"))
+	float UpdateInterval = 0.2f;
+
+	/** If true, the subsystem will output state changes and errors to the DynamicInstance log category. */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadWrite, Category = "Debug")
+	bool bEnableDebugLogging = false;
+
+	/** If true, draws spheres and circles in the viewport to visualize conversion ranges. */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadWrite, Category = "Debug")
+	bool bEnableDebugDraw = false;
+
+	/** How long debug lines persist. Use 0.0 for single-frame (flicker-free) updates. */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadWrite, Category = "Debug", meta = (ClampMin = "0.0"))
+	float DebugDrawDuration = 0.0f;
 
 protected:
 	UPROPERTY()
@@ -71,19 +88,7 @@ private:
 	TSet<TObjectPtr<UDynamicInstanceSourceComponent>> RegisteredSources;
 
 	FTimerHandle UpdateTimerHandle;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Config", meta = (ClampMin = "0.01"))
-	float UpdateInterval = 0.2f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Debug")
-	bool bEnableDebugLogging = false;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Debug")
-	bool bEnableDebugDraw = false;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Debug", meta = (ClampMin = "0.0"))
-	float DebugDrawDuration = 0.0f;
-
+	
 	void OnUpdate(float DeltaTime);
 	void OnUpdateTimer();
 	void EvaluateSources();

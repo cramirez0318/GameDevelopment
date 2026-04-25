@@ -48,43 +48,52 @@ TArray<UInstancedStaticMeshComponent*> UDynamicInstanceSourceComponent::GetSourc
 TArray<UInstancedStaticMeshComponent*> UDynamicInstanceSourceComponent::GetRegisteredISMComponents() const
 {
 	TArray<UInstancedStaticMeshComponent*> OutComponents;
-	if (AActor* Owner = GetOwner())
-	{
-		Owner->GetComponents<UInstancedStaticMeshComponent>(OutComponents);
-	}
-	return OutComponents;
-}
-
-void UDynamicInstanceSourceComponent::ForEachISMComponent(TFunctionRef<void(UInstancedStaticMeshComponent*)> Func)
-{
 	AActor* Owner = GetOwner();
-	if (!Owner) return;
+	if (!Owner)
+	{
+		return OutComponents;
+	}
 
 	if (FilterMode == EDynamicInstanceFilterMode::ExplicitList)
 	{
 		for (UInstancedStaticMeshComponent* ISM : ExplicitComponents)
 		{
-			if (IsValid(ISM)) Func(ISM);
-		}
-	}
-	else
-	{
-		TArray<UInstancedStaticMeshComponent*> Components;
-		Owner->GetComponents<UInstancedStaticMeshComponent>(Components);
-
-		for (UInstancedStaticMeshComponent* ISM : Components)
-		{
-			if (!IsValid(ISM)) continue;
-
-			if (FilterMode == EDynamicInstanceFilterMode::TagFilter)
+			if (IsValid(ISM))
 			{
-				if (!ISM->ComponentHasTag(RequiredComponentTag))
-				{
-					continue;
-				}
+				OutComponents.Add(ISM);
 			}
-			Func(ISM);
 		}
+		return OutComponents;
+	}
+
+	TArray<UInstancedStaticMeshComponent*> FoundComponents;
+	Owner->GetComponents<UInstancedStaticMeshComponent>(FoundComponents);
+
+	for (UInstancedStaticMeshComponent* ISM : FoundComponents)
+	{
+		if (!IsValid(ISM))
+		{
+			continue;
+		}
+
+		if (FilterMode == EDynamicInstanceFilterMode::TagFilter &&
+			!ISM->ComponentHasTag(RequiredComponentTag))
+		{
+			continue;
+		}
+
+		OutComponents.Add(ISM);
+	}
+
+	return OutComponents;
+}
+
+void UDynamicInstanceSourceComponent::ForEachISMComponent(TFunctionRef<void(UInstancedStaticMeshComponent*)> Func)
+{
+	TArray<UInstancedStaticMeshComponent*> Components = GetRegisteredISMComponents();
+	for (UInstancedStaticMeshComponent* ISM : Components)
+	{
+		Func(ISM);
 	}
 }
 

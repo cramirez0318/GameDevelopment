@@ -9,6 +9,7 @@
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
+#include "Utilities/ADIS_BaseConvertibleActor.h"
 
 void UDynamicInstanceSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -100,6 +101,11 @@ bool UDynamicInstanceSubsystem::ConvertInstanceToActor(FDynamicInstanceKey Key, 
 
     if (NewActor)
     {
+    	if (ADIS_BaseConvertibleActor* BaseActor = Cast<ADIS_BaseConvertibleActor>(NewActor))
+    	{
+    		BaseActor->ApplyDefinitionVisuals(Def);
+    	}
+    	
         Record.SpawnedActor = NewActor;
         Record.bIsConverted = true;
         Record.LastStateChangeTime = GetWorld()->GetTimeSeconds();
@@ -156,18 +162,30 @@ void UDynamicInstanceSubsystem::EvaluateSources()
 {
 	TArray<FVector> QueryLocations;
 	GetCollectionOfQueryLocations(QueryLocations);
-	if (QueryLocations.Num() == 0) return;
 	if (bEnableDebugDraw)
 	{
 		for (const FVector& Loc : QueryLocations)
+		{
 			DrawDebugSphere(GetWorld(), Loc, 50.0f, 12, FColor::Cyan, false, DebugDrawDuration, 0, 2.0f);
+		}
 	}
 
+	if (QueryLocations.Num() == 0) return;
 	for (auto It = RegisteredSources.CreateIterator(); It; ++It)
 	{
 		UDynamicInstanceSourceComponent* Source = It->Get();
-		if (!IsValid(Source) || !Source->HasValidDefinition()) continue;
-		if (!IsSourceInBroadphaseRange(Source, QueryLocations)) continue;
+		if (!IsValid(Source)) { It.RemoveCurrent(); continue; }
+
+		AActor* Owner = Source->GetOwner();
+		const FVector OwnerLoc = Owner->GetActorLocation();
+		if (bEnableDebugDraw)
+		{
+			bool bInRange = IsSourceInBroadphaseRange(Source, QueryLocations);
+			DrawDebugLine(GetWorld(), QueryLocations[0], OwnerLoc, bInRange ? FColor::Green : FColor::Yellow, false, 0.0f, 0, 2.0f);
+		}
+
+		if (!Source->HasValidDefinition() || !IsSourceInBroadphaseRange(Source, QueryLocations)) continue;
+
 		Source->ForEachISMComponent([&](UInstancedStaticMeshComponent* ISM)
 		{
 			const int32 Count = ISM->GetInstanceCount();
@@ -446,4 +464,10 @@ bool UDynamicInstanceSubsystem::ManualRevert(UInstancedStaticMeshComponent* ISM,
 	}
 	const FDynamicInstanceKey Key(ISM, InstanceIndex);
 	return RevertInstance(Key);
+}
+
+void UDynamicInstanceSubsystem::RefreshUpdateTimer()
+{
+	GetWorld()->GetTimerManager().ClearTimer(UpdateTimerHandle);
+	GetWorld()->GetTimerManager().SetTimer(UpdateTimerHandle, this, &UDynamicInstanceSubsystem::OnUpdateTimer, UpdateInterval, true);
 }

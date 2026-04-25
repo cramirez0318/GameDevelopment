@@ -23,6 +23,9 @@ class DYNAMICINSTANCESYSTEM_API UDynamicInstanceSourceComponent : public UActorC
 public:
 	UDynamicInstanceSourceComponent();
 	
+	UFUNCTION(BlueprintCallable, Category="Conversion")
+	void SetConversionDefinition(UDynamicConversionDefinition* InDefinition) { ConversionDefinition = InDefinition; }
+	
 	UPROPERTY(EditAnywhere, Category = "Instance Conversion|Filter")
 	EDynamicInstanceFilterMode FilterMode = EDynamicInstanceFilterMode::AllComponents;
 

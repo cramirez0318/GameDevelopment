@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "InstancedStruct.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "StructUtils/InstancedStruct.h"
 #include "DynamicInstanceTypes.generated.h"
@@ -32,6 +31,30 @@ FORCEINLINE uint32 GetTypeHash(const FDynamicInstanceKey& Key)
     Hash = HashCombine(Hash, GetTypeHash(Key.InstanceIndex));
     return Hash;
 }
+
+USTRUCT(BlueprintType)
+struct FDIS_RockState
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float Durability = 100.f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    bool bWasMined = false;
+};
+
+USTRUCT(BlueprintType)
+struct FDIS_LootState
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bOpened = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 LootSeed = 0;
+};
 
 USTRUCT(BlueprintType)
 struct FDynamicInstanceRecord
